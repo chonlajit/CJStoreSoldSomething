@@ -13,7 +13,14 @@ then sends a notification via Telegram or LINE bot.
 import argparse
 import os
 import sys
+import json
+import base64
+import requests
+import gspread
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def append_to_sheet(menu: str, qty: int, price: float) -> dict:
@@ -22,7 +29,40 @@ def append_to_sheet(menu: str, qty: int, price: float) -> dict:
     Returns dict {timestamp, menu, qty, price, total} ที่ append แล้ว
     Raises RuntimeError ถ้า credentials ไม่มี หรือ Sheet ไม่ accessible
     """
-    raise NotImplementedError("Implement in Session 2 Lab 1.3 (TODO 1)")
+    creds_str = os.getenv("GOOGLE_SHEETS_CREDENTIALS")
+    if not creds_str:
+        raise RuntimeError("GOOGLE_SHEETS_CREDENTIALS is not set in environment.")
+    
+    if not creds_str.strip().startswith("{"):
+        try:
+            creds_str = base64.b64decode(creds_str).decode('utf-8')
+        except Exception:
+            pass
+
+    try:
+        creds_dict = json.loads(creds_str)
+        gc = gspread.service_account_from_dict(creds_dict)
+        
+        sheet_id = os.getenv("GOOGLE_SHEETS_ID") or os.getenv("GOOGLESHEET_ID")
+        if sheet_id:
+            sheet = gc.open_by_key(sheet_id).sheet1
+        else:
+            sheet = gc.open("Milklab-saleslogs").sheet1 
+        
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        total = qty * price
+        
+        sheet.append_row([timestamp, menu, qty, price, total])
+        
+        return {
+            "timestamp": timestamp,
+            "menu": menu,
+            "qty": qty,
+            "price": price,
+            "total": total
+        }
+    except Exception as e:
+        raise RuntimeError(f"Failed to access Google Sheets: {e}")
 
 
 def send_notification(message: str) -> str:
@@ -32,7 +72,32 @@ def send_notification(message: str) -> str:
     Returns: provider name ที่ใช้ ("telegram" หรือ "line")
     Raises RuntimeError ถ้า no credentials
     """
-    raise NotImplementedError("Implement in Session 2 Lab 1.3 (TODO 2)")
+    telegram_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    line_token = os.getenv("LINE_CHANNEL_TOKEN")
+    
+    if telegram_token and telegram_chat_id:
+        url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
+        payload = {"chat_id": telegram_chat_id, "text": message}
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        return "telegram"
+        
+    elif line_token:
+        url = "https://api.line.me/v2/bot/message/broadcast"
+        headers = {
+            "Authorization": f"Bearer {line_token}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "messages": [{"type": "text", "text": message}]
+        }
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        return "line"
+        
+    else:
+        raise RuntimeError("No TELEGRAM_BOT_TOKEN+CHAT_ID or LINE_CHANNEL_TOKEN found in environment.")
 
 
 def main() -> int:
