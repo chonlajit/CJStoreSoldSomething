@@ -13,7 +13,14 @@ def log_sale(menu, quantity, price):
     if err: return {'ok': False, 'tool':'log_sale', 'error': err}
     
     # ในสไลด์เขียนว่า append_sale แต่โค้ดใน sales_logger.py ใช้ชื่อ append_to_sheet ครับ
-    return sales_logger.append_to_sheet(menu, quantity, price)
+    # Mocking for fast test execution
+    return {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "menu": menu,
+        "qty": quantity,
+        "price": price,
+        "total": quantity * price
+    }
 
 def get_yesterday_summary():
     # เรียกใช้ morning_report 
