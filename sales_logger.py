@@ -14,6 +14,7 @@ import argparse
 import os
 import sys
 import json
+import base64
 import requests
 import gspread
 from datetime import datetime
@@ -28,16 +29,21 @@ def append_to_sheet(menu: str, qty: int, price: float) -> dict:
     Returns dict {timestamp, menu, qty, price, total} ที่ append แล้ว
     Raises RuntimeError ถ้า credentials ไม่มี หรือ Sheet ไม่ accessible
     """
-    creds_json = os.getenv("GOOGLE_SHEETS_CREDENTIALS")
-    if not creds_json:
+    creds_str = os.getenv("GOOGLE_SHEETS_CREDENTIALS")
+    if not creds_str:
         raise RuntimeError("GOOGLE_SHEETS_CREDENTIALS is not set in environment.")
     
+    if not creds_str.strip().startswith("{"):
+        try:
+            creds_str = base64.b64decode(creds_str).decode('utf-8')
+        except Exception:
+            pass
+
     try:
-        creds_dict = json.loads(creds_json)
+        creds_dict = json.loads(creds_str)
         gc = gspread.service_account_from_dict(creds_dict)
         
-        # เปิด Sheet จาก ID (ถ้ามี) หรือใช้ชื่อ Sheet
-        sheet_id = os.getenv("GOOGLESHEET_ID")
+        sheet_id = os.getenv("GOOGLE_SHEETS_ID") or os.getenv("GOOGLESHEET_ID")
         if sheet_id:
             sheet = gc.open_by_key(sheet_id).sheet1
         else:
@@ -78,7 +84,6 @@ def send_notification(message: str) -> str:
         return "telegram"
         
     elif line_token:
-        # ใช้ Broadcast API ชั่วคราว (หรือจะแก้ไปใช้ Push/Reply ตามที่เรียนก็ได้)
         url = "https://api.line.me/v2/bot/message/broadcast"
         headers = {
             "Authorization": f"Bearer {line_token}",
