@@ -7,8 +7,11 @@ Deploy: push to GitHub then Actions deploys to HuggingFace Space
 """
 
 import os
-
 import streamlit as st
+import faiss
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from google import genai
 
 
 @st.cache_resource
@@ -18,12 +21,31 @@ def load_index():
 
     Returns: (model, index, chunks_list)
     """
-    raise NotImplementedError("Implement in Session 3 Lab 2.2 (TODO 1-3)")
+    with open("menu_kb.md", "r", encoding="utf-8") as f:
+        text = f.read()
+        
+    chunks_list = [c.strip() for c in text.split("\n\n") if c.strip()]
+    
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    embeddings = model.encode(chunks_list, convert_to_numpy=True)
+    
+    dimension = embeddings.shape[1]
+    index = faiss.IndexFlatL2(dimension)
+    index.add(embeddings)
+    
+    return model, index, chunks_list
 
 
 def retrieve_top_k(query: str, model, index, chunks: list[str], k: int = 3) -> list[str]:
     """TODO 4: encode query, search index, return top-k chunks"""
-    raise NotImplementedError("Implement in Session 3 Lab 2.2 (TODO 4)")
+    query_embedding = model.encode([query], convert_to_numpy=True)
+    distances, indices = index.search(query_embedding, k)
+    
+    top_chunks = []
+    for idx in indices[0]:
+        if idx < len(chunks):
+            top_chunks.append(chunks[idx])
+    return top_chunks
 
 
 def generate_answer(query: str, context_chunks: list[str]) -> str:
@@ -31,7 +53,20 @@ def generate_answer(query: str, context_chunks: list[str]) -> str:
 
     Hint: build prompt that says "ตอบจากข้อมูลต่อไปนี้เท่านั้น ถ้าไม่มีใน context ให้บอกว่าไม่รู้"
     """
-    raise NotImplementedError("Implement in Session 3 Lab 2.2 (TODO 5)")
+    client = genai.Client()
+    context = "\n\n".join(context_chunks)
+    prompt = f"""ตอบคำถามจากข้อมูลต่อไปนี้เท่านั้น ถ้าไม่มีในข้อมูลให้บอกว่าไม่ทราบ
+
+ข้อมูล:
+{context}
+
+คำถาม: {query}"""
+    
+    response = client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=prompt,
+    )
+    return response.text
 
 
 def main():
