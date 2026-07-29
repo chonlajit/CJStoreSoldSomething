@@ -26,7 +26,7 @@ def load_index():
         
     chunks_list = [c.strip() for c in text.split("\n\n") if c.strip()]
     
-    model = SentenceTransformer('all-MiniLM-L6-v2')
+    model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
     embeddings = model.encode(chunks_list, convert_to_numpy=True)
     
     dimension = embeddings.shape[1]
