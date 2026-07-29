@@ -63,7 +63,7 @@ def generate_answer(query: str, context_chunks: list[str]) -> str:
 คำถาม: {query}"""
     
     response = client.models.generate_content(
-        model='gemini-1.5-flash',
+        model='gemini-flash-latest',
         contents=prompt,
     )
     return response.text
