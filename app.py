@@ -95,7 +95,10 @@ def main():
         with st.chat_message("assistant"):
             with st.spinner("กำลังค้นข้อมูล..."):
                 context = retrieve_top_k(prompt, model, index, chunks)
-                answer = generate_answer(prompt, context)
+                try:
+                    answer = generate_answer(prompt, context)
+                except Exception as e:
+                    answer = "⚠️ ขออภัยด้วยนะคะ ตอนนี้ระบบขัดข้องหรือโควต้า AI อาจจะหมด รบกวนคุณลูกค้าตรวจสอบ API Key หรือกลับมาลองใหม่ภายหลังนะคะ 🙏"
             st.write(answer)
             with st.expander("Source chunks"):
                 for i, c in enumerate(context, 1):
