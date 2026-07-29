@@ -98,7 +98,15 @@ def main():
                 try:
                     answer = generate_answer(prompt, context)
                 except Exception as e:
-                    answer = "⚠️ ขออภัยด้วยนะคะ ตอนนี้ระบบขัดข้องหรือโควต้า AI อาจจะหมด รบกวนคุณลูกค้าตรวจสอบ API Key หรือกลับมาลองใหม่ภายหลังนะคะ 🙏"
+                    error_str = str(e).lower()
+                    if "404" in error_str or "not_found" in error_str or "not found" in error_str:
+                        answer = "🚨 **Error: ไม่พบโมเดลที่ระบุ (Model Not Found)**\nโปรดตรวจสอบชื่อโมเดลในไฟล์ `app.py` ว่าถูกต้องหรือไม่"
+                    elif "429" in error_str or "quota" in error_str or "exhausted" in error_str:
+                        answer = "🚨 **Error: โควต้า API หมด (Quota Exceeded)**\nโปรดตรวจสอบโควต้าการใช้งาน Google API ของคุณ"
+                    elif "400" in error_str or "api key" in error_str:
+                        answer = "🚨 **Error: API Key ไม่ถูกต้อง (Invalid API Key)**\nโปรดตรวจสอบ API Key อีกครั้ง"
+                    else:
+                        answer = f"🚨 **Error ระบบขัดข้อง:** {str(e)}"
             st.write(answer)
             with st.expander("Source chunks"):
                 for i, c in enumerate(context, 1):
