@@ -105,6 +105,8 @@ def main():
                         answer = "🚨 **Error: โควต้า API หมด (Quota Exceeded)**\nโปรดตรวจสอบโควต้าการใช้งาน Google API ของคุณ"
                     elif "400" in error_str or "api key" in error_str:
                         answer = "🚨 **Error: API Key ไม่ถูกต้อง (Invalid API Key)**\nโปรดตรวจสอบ API Key อีกครั้ง"
+                    elif "503" in error_str or "unavailable" in error_str:
+                        answer = "🚨 **Error: เซิร์ฟเวอร์ทำงานหนัก (503 Service Unavailable)**\nขณะนี้มีผู้ใช้งาน AI จำนวนมาก กรุณารอสักครู่แล้วลองถามใหม่อีกครั้งค่ะ"
                     else:
                         answer = f"🚨 **Error ระบบขัดข้อง:** {str(e)}"
             st.write(answer)
