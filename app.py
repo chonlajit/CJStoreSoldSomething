@@ -125,8 +125,8 @@ def generate_answer(query: str, context_chunks: list[str]) -> str:
 
 
 def main():
+    st.set_page_config(page_title="CJStoreSoldSomething RAG", page_icon="👕")
     try:
-        st.set_page_config(page_title="CJStoreSoldSomething RAG", page_icon="👕")
         st.title("CJStoreSoldSomething RAG Chatbot")
         st.caption("ถามอะไรเกี่ยวกับ CJStoreSoldSomething ได้ ตอบจาก CJStore_kb.md")
 
