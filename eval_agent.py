@@ -40,7 +40,7 @@ TEST_CASES = [
 ]
 
 def run_eval():
-    print("--- Start Running Test Cases for MilkLab Agent ---")
+    print("--- Start Running Test Cases for CJStore Agent ---")
     for i, tc in enumerate(TEST_CASES, 1):
         print(f"\n[{i}] ประเภท: {tc['type']}")
         print(f"📥 Input: '{tc['input']}'")

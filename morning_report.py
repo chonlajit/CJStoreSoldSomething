@@ -30,7 +30,7 @@ def fetch_data():
     if sheet_id:
         sheet = gc.open_by_key(sheet_id).sheet1
     else:
-        sheet = gc.open("Milklab-saleslogs").sheet1
+        sheet = gc.open("CJSSSlogs_orders").sheet1
         
     return sheet.get_all_records()
 
