@@ -100,7 +100,7 @@ def generate_answer(query: str, context_chunks: list[str]) -> str:
 คำถาม: {query}"""
     
     response = client.models.generate_content(
-        model='gemini-2.0-flash',
+        model='gemini-1.5-flash',
         contents=prompt,
     )
     return response.text

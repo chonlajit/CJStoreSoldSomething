@@ -55,7 +55,7 @@ User: ขายดีไหมวันนี้
 {"action": "unknown", "arguments": {}, "confidence": 0.3, "reason": "คำถามไม่ชัดเจนว่าให้ทำอะไร"}
 '''
 
-model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=SYSTEM_INSTRUCTION)
+model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=SYSTEM_INSTRUCTION)
 
 def write_trace(data):
     stage = data.get('stage', 'unknown')

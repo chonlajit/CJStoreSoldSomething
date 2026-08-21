@@ -36,7 +36,7 @@ def generate_caption(item: str, api_key: str | None = None) -> str:
         raise RuntimeError("GOOGLE_API_KEY not set in env or argument")
     client = genai.Client(api_key=key)
 
-    models = ["gemini-2.0-flash", "gemini-2.0-flash-lite"]
+    models = ["gemini-1.5-flash", "gemini-1.5-flash-8b"]
     last_exc = None
     for model in models:
         try:
