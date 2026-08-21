@@ -137,7 +137,7 @@ def main():
                 except Exception as e:
                     error_str = str(e).lower()
                     if "404" in error_str or "not_found" in error_str or "not found" in error_str:
-                        answer = "🚨 **Error: ไม่พบโมเดลที่ระบุ (Model Not Found)**\nโปรดตรวจสอบชื่อโมเดลในไฟล์ `app.py` ว่าถูกต้องหรือไม่"
+                        answer = f"🚨 **Error: ไม่พบโมเดลที่ระบุ (Model Not Found)**\nโปรดตรวจสอบชื่อโมเดลในไฟล์ `app.py` ว่าถูกต้องหรือไม่\n\n**รายละเอียด Error จริง:** {str(e)}"
                     elif "429" in error_str or "quota" in error_str or "exhausted" in error_str:
                         answer = "🚨 **Error: โควต้า API หมด (Quota Exceeded)**\nโปรดตรวจสอบโควต้าการใช้งาน Google API ของคุณ"
                     elif "400" in error_str or "api key" in error_str:
