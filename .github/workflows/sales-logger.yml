@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       menu:
-        description: 'ชื่อเมนู'
+        description: 'ชื่อสินค้า'
         required: true
-        default: 'นมหมีฮอกไกโด'
+        default: 'เสื้อแบบที่ 1'
       qty:
         description: 'จำนวน'
         required: true
@@ -17,7 +17,7 @@ on:
       price:
         description: 'ราคา'
         required: true
-        default: '65'
+        default: '569'
 
 jobs:
   log-sale:
