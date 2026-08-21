@@ -39,7 +39,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           LINE_CHANNEL_TOKEN: ${{ secrets.LINE_CHANNEL_TOKEN }}
         run: |
-          python sales_logger.py \
-            --menu "${{ github.event.inputs.menu || 'เสื้อแบบที่ 1' }}" \
+          python cjSales_loggers.py \
+            --name "${{ github.event.inputs.menu || 'เสื้อแบบที่ 1' }}" \
             --qty ${{ github.event.inputs.qty || 1 }} \
             --price ${{ github.event.inputs.price || 569 }}

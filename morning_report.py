@@ -32,7 +32,34 @@ def fetch_data():
     else:
         sheet = gc.open("CJSSSlogs_orders").sheet1
         
-    return sheet.get_all_records()
+    all_values = sheet.get_all_values()
+    rows = []
+    for row in all_values:
+        # Check Handmade Sales (Columns A:F, indices 0-5)
+        if len(row) >= 6 and "-" in str(row[0]) and ":" in str(row[0]):
+            try:
+                rows.append({
+                    'timestamp': str(row[0]).strip(),
+                    'menu': f"[พร้อมส่ง] {str(row[1]).strip()}",
+                    'qty': str(row[3]).replace(',', '').strip(),
+                    'total': str(row[5]).replace(',', '').strip()
+                })
+            except Exception:
+                pass
+                
+        # Check Custom Orders (Columns H:O, indices 7-14)
+        if len(row) >= 15 and "-" in str(row[7]) and ":" in str(row[7]):
+            try:
+                rows.append({
+                    'timestamp': str(row[7]).strip(),
+                    'menu': f"[สั่งทำ] {str(row[8]).strip()}",
+                    'qty': str(row[12]).replace(',', '').strip(),
+                    'total': str(row[14]).replace(',', '').strip()
+                })
+            except Exception:
+                pass
+                
+    return rows
 
 def summarize_for_date(rows: list[dict], target_date: str) -> str:
     """
