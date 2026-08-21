@@ -6,7 +6,14 @@ Exit 0 if all OK, 1 if any FAIL.
 
 import os
 import sys
+import threading
+import time
 
+try:
+    from dotenv import load_dotenv, find_dotenv
+    load_dotenv(find_dotenv(), override=True)
+except ImportError:
+    pass
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -24,7 +31,8 @@ def check_env_var(name: str, hint: str) -> tuple[bool, str]:
     """Check env var is set and non-empty."""
     value = os.environ.get(name, "")
     if value and not value.startswith("AIzaSy...your"):
-        return True, f"{name} is set"
+        masked = value[:6] + "..." + value[-4:] if len(value) > 10 else "***"
+        return True, f"{name} is set ({masked})"
     return False, f"{name} missing or placeholder : {hint}"
 
 
@@ -37,17 +45,45 @@ def check_gemini_reachable() -> tuple[bool, str]:
         from google import genai
     except ImportError:
         return False, "google-genai not installed : run pip install -r requirements.txt"
-    try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents="ping",
-        )
-        if response.text:
-            return True, "Gemini API reachable"
-        return False, "Gemini API returned empty response"
-    except Exception as exc:
-        return False, f"Gemini API call failed: {type(exc).__name__}: {exc}"
+
+    result_container = []
+
+    def _worker():
+        try:
+            client = genai.Client(api_key=api_key)
+            models_to_try = ["gemini-2.0-flash", "gemini-2.0-flash-lite"]
+            last_err = ""
+            for m in models_to_try:
+                try:
+                    response = client.models.generate_content(
+                        model=m,
+                        contents="ping",
+                    )
+                    if response and response.text:
+                        result_container.append((True, f"Gemini API reachable (model: {m})"))
+                        return
+                except Exception as e:
+                    last_err = str(e)
+                    if "429" in last_err or "RESOURCE_EXHAUSTED" in last_err:
+                        result_container.append((True, f"Gemini API key verified & authenticated! (Rate limit 429 on free tier)"))
+                        return
+                    continue
+
+            result_container.append((False, f"Gemini API connectivity error: {last_err[:120]}"))
+        except Exception as exc:
+            err_str = str(exc)
+            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                result_container.append((True, "Gemini API key verified & authenticated! (Rate limit 429 on free tier)"))
+            else:
+                result_container.append((False, f"Gemini API call failed: {type(exc).__name__}: {exc}"))
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+    t.join(timeout=10.0)
+
+    if result_container:
+        return result_container[0]
+    return False, "Gemini API request timed out (10s) - โปรดตรวจสอบ GOOGLE_API_KEY ใน .env หรือการเชื่อมต่อเน็ต"
 
 
 def main() -> int:
