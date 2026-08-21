@@ -99,11 +99,29 @@ def generate_answer(query: str, context_chunks: list[str]) -> str:
 
 คำถาม: {query}"""
     
-    response = client.models.generate_content(
-        model='gemini-1.5-flash',
-        contents=prompt,
-    )
-    return response.text
+    models_to_try = [
+        "gemini-2.0-flash",
+        "gemini-1.5-flash", 
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-flash-002",
+        "gemini-1.5-pro",
+        "gemini-1.0-pro"
+    ]
+    
+    last_error = None
+    for model_name in models_to_try:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+            )
+            return response.text
+        except Exception as e:
+            last_error = e
+            continue
+            
+    # ถ้าลองทุกโมเดลแล้วยังพัง ให้โยน error ตัวสุดท้ายออกไป
+    raise last_error
 
 
 def main():
