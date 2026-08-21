@@ -125,50 +125,67 @@ def generate_answer(query: str, context_chunks: list[str]) -> str:
 
 
 def main():
-    st.set_page_config(page_title="CJStoreSoldSomething RAG", page_icon="👕")
-    st.title("CJStoreSoldSomething RAG Chatbot")
-    st.caption("ถามอะไรเกี่ยวกับ CJStoreSoldSomething ได้ ตอบจาก CJStore_kb.md")
-
     try:
-        model, index, chunks = load_index()
-    except NotImplementedError as exc:
-        st.error(f"TODO not implemented: {exc}")
-        st.stop()
+        st.set_page_config(page_title="CJStoreSoldSomething RAG", page_icon="👕")
+        st.title("CJStoreSoldSomething RAG Chatbot")
+        st.caption("ถามอะไรเกี่ยวกับ CJStoreSoldSomething ได้ ตอบจาก CJStore_kb.md")
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+        try:
+            model, index, chunks = load_index()
+        except NotImplementedError as exc:
+            st.error(f"TODO not implemented: {exc}")
+            st.stop()
+        except Exception as e:
+            st.error(f"🚨 **Critical Error during load_index:** {str(e)}")
+            st.stop()
 
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.write(msg["content"])
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
 
-    if prompt := st.chat_input("ถามอะไรเกี่ยวกับ CJStoreSoldSomething"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.write(prompt)
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.write(msg["content"])
 
-        with st.chat_message("assistant"):
-            with st.spinner("กำลังค้นข้อมูล..."):
-                context = retrieve_top_k(prompt, model, index, chunks)
-                try:
-                    answer = generate_answer(prompt, context)
-                except Exception as e:
-                    error_str = str(e).lower()
-                    if "404" in error_str or "not_found" in error_str or "not found" in error_str:
-                        answer = f"🚨 **Error: ไม่พบโมเดลที่ระบุ (Model Not Found)**\nโปรดตรวจสอบชื่อโมเดลในไฟล์ `app.py` ว่าถูกต้องหรือไม่\n\n**รายละเอียด Error จริง:** {str(e)}"
-                    elif "429" in error_str or "quota" in error_str or "exhausted" in error_str:
-                        answer = "🚨 **Error: โควต้า API หมด (Quota Exceeded)**\nโปรดตรวจสอบโควต้าการใช้งาน Google API ของคุณ"
-                    elif "400" in error_str or "api key" in error_str:
-                        answer = "🚨 **Error: API Key ไม่ถูกต้อง (Invalid API Key)**\nโปรดตรวจสอบ API Key อีกครั้ง"
-                    elif "503" in error_str or "unavailable" in error_str:
-                        answer = "🚨 **Error: เซิร์ฟเวอร์ทำงานหนัก (503 Service Unavailable)**\nขณะนี้มีผู้ใช้งาน AI จำนวนมาก กรุณารอสักครู่แล้วลองถามใหม่อีกครั้งค่ะ"
-                    else:
-                        answer = f"🚨 **Error ระบบขัดข้อง:** {str(e)}"
-            st.write(answer)
-            with st.expander("Source chunks"):
-                for i, c in enumerate(context, 1):
-                    st.markdown(f"**[{i}]** {c}")
-        st.session_state.messages.append({"role": "assistant", "content": answer})
+        if prompt := st.chat_input("ถามอะไรเกี่ยวกับ CJStoreSoldSomething"):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.write(prompt)
+
+            with st.chat_message("assistant"):
+                with st.spinner("กำลังค้นข้อมูล..."):
+                    context = retrieve_top_k(prompt, model, index, chunks)
+                    try:
+                        answer = generate_answer(prompt, context)
+                    except Exception as e:
+                        error_str = str(e).lower()
+                        
+                        # Debug: Try to list available models
+                        try:
+                            client = genai.Client()
+                            available = [m.name for m in client.models.list()]
+                            avail_str = ", ".join(available)
+                        except Exception as list_e:
+                            avail_str = f"Cannot list models: {str(list_e)}"
+                            
+                        if "404" in error_str or "not_found" in error_str or "not found" in error_str:
+                            answer = f"🚨 **Error: ไม่พบโมเดลที่ระบุ (Model Not Found)**\n\n**รายละเอียด Error จริง:** {str(e)}\n\n**โมเดลที่คุณมีสิทธิ์ใช้ได้ (จาก API Key นี้):**\n{avail_str}"
+                        elif "429" in error_str or "quota" in error_str or "exhausted" in error_str:
+                            answer = "🚨 **Error: โควต้า API หมด (Quota Exceeded)**\nโปรดตรวจสอบโควต้าการใช้งาน Google API ของคุณ"
+                        elif "400" in error_str or "api key" in error_str:
+                            answer = "🚨 **Error: API Key ไม่ถูกต้อง (Invalid API Key)**\nโปรดตรวจสอบ API Key อีกครั้ง"
+                        elif "503" in error_str or "unavailable" in error_str:
+                            answer = "🚨 **Error: เซิร์ฟเวอร์ทำงานหนัก (503 Service Unavailable)**\nขณะนี้มีผู้ใช้งาน AI จำนวนมาก กรุณารอสักครู่แล้วลองถามใหม่อีกครั้งค่ะ"
+                        else:
+                            answer = f"🚨 **Error ระบบขัดข้อง:** {str(e)}\n\n**Available Models:** {avail_str}"
+                st.write(answer)
+                with st.expander("Source chunks"):
+                    for i, c in enumerate(context, 1):
+                        st.markdown(f"**[{i}]** {c}")
+            st.session_state.messages.append({"role": "assistant", "content": answer})
+    except Exception as fatal_e:
+        import traceback
+        st.error(f"🚨 **Fatal Error (App Crashed!):**\n\n```\n{traceback.format_exc()}\n```")
+
 
 
 if __name__ == "__main__":
